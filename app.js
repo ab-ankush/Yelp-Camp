@@ -45,8 +45,9 @@ app.use(
   })
 );
 
+const secret = process.env.SECRET;
 const sessionConfig = {
-  secret: "this_is_a_secret",
+  secret,
   resave: false,
   name: "first",
   store: new MongoStore({
