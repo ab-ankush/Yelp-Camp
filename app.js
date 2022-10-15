@@ -13,12 +13,14 @@ const flash = require("connect-flash");
 const ejsMate = require("ejs-mate");
 const ExpressError = require("./utils/ExpressError");
 const User = require("./models/users");
+const mongoSanitize = require("express-mongo-sanitize");
+const MongoStore = require("connect-mongo");
 
 const userRoutes = require("./routes/users");
 const campgroundRoutes = require("./routes/campground");
 const reviewRoutes = require("./routes/reviews");
 
-mongoose.connect("mongodb://localhost:27017/yelp-camp", {
+mongoose.connect(process.env.DBURL, {
   useUnifiedTopology: true,
 });
 
@@ -37,14 +39,24 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
+app.use(
+  mongoSanitize({
+    replaceWith: "_",
+  })
+);
 
 const sessionConfig = {
   secret: "this_is_a_secret",
   resave: false,
   name: "first",
+  store: new MongoStore({
+    mongoUrl: process.env.DBURL,
+    touchAfter: 24 * 3600,
+  }),
   saveUninitialized: true,
   cookie: {
     httpOnly: true,
+    // secure: true,
     expires: Date.now() + 100 * 60 * 60 * 24 * 7,
     maxAge: 100 * 60 * 60 * 24 * 7,
   },
@@ -88,6 +100,7 @@ app.use((err, req, res, next) => {
   res.status(statusCode).render("error", { err });
 });
 
-app.listen(3000, () => {
-  console.log("serving on port 3000");
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`serving on port ${port}`);
 });
